@@ -29,10 +29,12 @@ if [ "$kernel_version" -lt 3 ]; then
   fi
   yum --enablerepo=elrepo-kernel install kernel-lt
   
+  # Many thanks to http://wiki.centos-webpanel.com/kernel-update
+  sed -i "s|default=1|default=0|g" /etc/grub.conf # Activamos el nuevo kernel para el arranque
+  
   echo "System is going to reboot now"
   echo -e "\e[91mDocker is not installed yet. Please, run this script again after reboot to install Docker.\e[0m"
   reboot
-  
 fi
 
 
