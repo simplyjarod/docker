@@ -9,10 +9,11 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 
-# kernel version 3 (or greater) is needed
 kernel_version=$(uname -r | cut -f1 -d.)
 centos_version=$(rpm -qa \*-release | grep -Ei "oracle|redhat|centos" | cut -d"-" -f3)
 
+
+# kernel version 3.10 (or greater) is needed
 if [ "$kernel_version" -lt 3 ]; then
   read -r -p "Your kernel needs an update. Update kernel (system will reboot)? [y/N] " response
   res=${response,,} # tolower
@@ -38,25 +39,33 @@ if [ "$kernel_version" -lt 3 ]; then
 fi
 
 
-# uninstall old versions:
-yum remove docker docker-common docker-selinux docker-engine
-# Images, containers, volumes, or customized configuration files on your host are not automatically removed.
-# To delete all images, containers, and volumes:
-# rm -rf /var/lib/docker
+if [ "$centos_version" -eq 6 ]; then
+	# docker is part of Extra Packages for Enterprise Linux (EPEL)
+	yum install epel-release -y
+	#rpm -iUvh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
+	yum install docker-io -y
+	service docker start
+	
+else
+	# uninstall old versions:
+	yum remove docker docker-common docker-selinux docker-engine
+	# Images, containers, volumes, or customized configuration files on your host are not automatically removed.
+	# To delete all images, containers, and volumes:
+	# rm -rf /var/lib/docker
 
-# set up the repository:
-yum install -y yum-utils device-mapper-persistent-data lvm2
+	# set up the repository:
+	yum install -y yum-utils device-mapper-persistent-data lvm2
 
-yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+	yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo/ # needs last "/"
 
-
-# install docker ce:
-yum install docker-ce
+	# install docker ce:
+	yum install docker-ce
+	
+	# Post-installation steps:
+	echo "Read https://docs.docker.com/install/linux/linux-postinstall/ if you don't want to use sudo when you use the docker command."
+	
+fi
 
 chkconfig docker on
 
 docker run hello-world
-
-
-# Post-installation steps:
-echo "Read https://docs.docker.com/install/linux/linux-postinstall/ if you don't want to use sudo when you use the docker command."
